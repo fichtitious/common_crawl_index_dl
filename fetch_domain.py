@@ -36,21 +36,21 @@ def main(domain, localDir):
 
   for url, info in reader.itemsiter(domain):
 
-    try:
-      keyname = '/common-crawl/parse-output/segment/{arcSourceSegmentId}/{arcFileDate}_{arcFilePartition}.arc.gz'.format(**info)
-      key = bucket.lookup(keyname)
-      start = info['arcFileOffset']
-      end = start + info['compressedSize'] - 1
-      headers = {'Range' : 'bytes={}-{}'.format(start, end)}
-      chunk = StringIO(key.get_contents_as_string(headers=headers))
-      localFile = os.path.join(localDir, '-'.join(map(str, (info['arcSourceSegmentId'],
-                                                            info['arcFileDate'],
-                                                            info['arcFilePartition'],
-                                                            info['arcFileOffset'])))) + '.GZ.Z'
-    finally:
-      if os.path.exists(localFile):
-        print '%s already exists' % localFile
-      else:
+    localFile = os.path.join(localDir, '-'.join(map(str, (info['arcSourceSegmentId'],
+                                                          info['arcFileDate'],
+                                                          info['arcFilePartition'],
+                                                          info['arcFileOffset'])))) + '.GZ.Z'
+    if os.path.exists(localFile):
+      print '%s already exists' % localFile
+    else:
+      try:
+        keyname = '/common-crawl/parse-output/segment/{arcSourceSegmentId}/{arcFileDate}_{arcFilePartition}.arc.gz'.format(**info)
+        key = bucket.lookup(keyname)
+        start = info['arcFileOffset']
+        end = start + info['compressedSize'] - 1
+        headers = {'Range' : 'bytes={}-{}'.format(start, end)}
+        chunk = StringIO(key.get_contents_as_string(headers=headers))
+      finally:
         dest = open(localFile, 'w')
         for line in chunk:
           dest.write(line)
