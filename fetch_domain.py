@@ -7,39 +7,10 @@ import sys
 import boto
 from cStringIO import StringIO
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'common_crawl_index/bin'))
+from remote_read import BotoMap
+
 from lib.pbtree import PBTreeDictReader
-
-class BotoMap(object):
-  '''https://github.com/trivio/common_crawl_index/blob/master/bin/remote_read'''
-
-  def __init__(self, bucket, key_name, access_key=None, access_secret=None ):
-    if access_key and access_secret:
-      self.conn  = boto.connect_s3(access_key,access_secret)
-    else:
-      self.conn  = boto.connect_s3(anon=True)
-    bucket = self.conn.lookup(bucket)
-    self.key = bucket.lookup(key_name)
-    self.block_size = 2**16
-    self.cached_block = -1
-
-  def __getitem__(self, i):
-    if isinstance(i, slice):
-      start = i.start
-      end = i.stop - 1
-    else:
-      start = i
-      end = start + 1
-    return self.fetch(start,end)
-
-  def fetch(self, start, end):
-    try:
-      return self.key.get_contents_as_string(
-        headers={'Range' : 'bytes={}-{}'.format(start, end)}
-      )
-    except boto.exception.S3ResponseError, e:
-      # invalid range, we've reached the end of the file
-      if e.status == 416:
-        return ''
 
 def main(domain, localDir):
 
